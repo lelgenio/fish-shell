@@ -1,6 +1,18 @@
-set -l options (string replace -fr '^\s*--([\w-]+).*' '$1' -- (command mpv --list-options 2>/dev/null))
-for opt in $options
-    complete -c mpv -l "$opt"
+set fish_trace 1
+
+command mpv --list-options 2>/dev/null | while read line
+    string match '[deprecated]'
+    and continue
+    string match -rq '^\s*--(?<opt>[\w-]+).*' $line
+    or continue
+
+    string match -r '(?<=Choices:)([\w\s]+)' $line |
+        string match -raq '\s*(?<choices>\w+)'
+
+    string match -rq '(?<description>Flag.*$)' $line
+        complete -c mpv -l "no-$opt" -d "$description"
+
+    complete -c mpv -l "$opt" -a "$choices" -d "$description"
 end
 
 complete -c mpv -l start -x -d "Seek to given position (%, s, hh:mm:ss)"
